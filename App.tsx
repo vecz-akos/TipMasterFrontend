@@ -11,13 +11,15 @@ const appName = expo.name;
 
 export default function Main() {
   return (
-    <AxiosProvider>
-      <SafeAreaProvider>
-        <PaperProvider>
-          <App />
-        </PaperProvider>
-      </SafeAreaProvider>
-    </AxiosProvider>
+    <AuthProvider>
+      <AxiosProvider>
+        <SafeAreaProvider>
+          <PaperProvider>
+            <App />
+          </PaperProvider>
+        </SafeAreaProvider>
+      </AxiosProvider>
+    </AuthProvider>
   );
 }
 

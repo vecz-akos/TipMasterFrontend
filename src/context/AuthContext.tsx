@@ -1,4 +1,5 @@
 import React, {createContext, useState, FC} from 'react';
+// import * as Keychain from 'react-native-keychain';
 
 type Props = {
   children?: React.ReactNode
@@ -6,6 +7,7 @@ type Props = {
 
 interface AuthState {
   accessToken: string | null;
+  refreshToken: string | null,
   authenticated: boolean | null;
 }
 
@@ -22,11 +24,17 @@ const {Provider} = AuthContext;
 const AuthProvider: FC<Props> = ({children}: any) => {
   const [authState, setAuthState] = useState<AuthState>({
     accessToken: null,
-    authenticated: false,
+    refreshToken: null,
+    authenticated: null,
   });
 
   const logout = async () => {
-    // TODO
+    //await Keychain.resetGenericPassword();
+    setAuthState({
+      accessToken: null,
+      refreshToken: null,
+      authenticated: false,
+    });
   };
 
   const getAccessToken = () => {

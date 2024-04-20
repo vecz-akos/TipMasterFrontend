@@ -1,76 +1,98 @@
-import { useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+// import * as Keychain from 'react-native-keychain';
 
 import { AuthContext } from "../context/AuthContext";
 import { AxiosContext } from "../context/AxiosContext";
 
 import { Alert, StyleSheet, View } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Banner, Button, HelperText, Icon, Text } from "react-native-paper";
 import Input from "../shared/components/Input";
 import RegistrationPage from "./RegistrationPage";
+import Spinner from "../shared/components/Spinner";
+import { HttpStatusCode } from "axios";
 
 export default function LoginPage() {
-    const authContext = useContext(AuthContext);
-    const { publicAxios, setToken, token } = useContext(AxiosContext);
+    const { authState, setAuthState, logout } = useContext(AuthContext);
+    const { publicAxios, authAxios } = useContext(AxiosContext);
+    const [status, setStatus] = useState('loading');
+    const [bannerShow, setBannerShow] = useState(false);
+    const [bannerMsg, setBannerMsg] = useState("");
 
     const [usernameInput, setUsernameInput] = useState("");
     const [pwInput, setPwInput] = useState("");
-    const [pwHide, setPwHide] = useState(true);
+    const [errorMsg, setErrorMsg] = useState("");
     const [isLoginPage, setIsLoginPage] = useState(true);
 
-    const [testText, setTestText] = useState("Default text.")
+
+    const [testText, setTestText] = useState("");
+
+    const loadJWT = useCallback(async () => {
+        try {
+        //   const value: any = await Keychain.getGenericPassword();
+        //   const jwt = JSON.parse(value?.password);
+            const jwt = authState;
     
-    const handlePwShow = () => {
-        setPwHide(!pwHide);
-    }
+            setAuthState({
+                accessToken: jwt.accessToken || null,
+                refreshToken: jwt.refreshToken || null,
+                authenticated: jwt.accessToken !== null,
+            });
+            setStatus('success');
+        } catch (error: any) {
+            setStatus('error');
+            console.log(`Keychain Error: ${error.message}`);
+            setAuthState({
+                accessToken: null,
+                refreshToken: null,
+                authenticated: false,
+            });
+        }
+      }, []);
+    
+    useEffect(() => {
+        loadJWT();
+    }, [loadJWT]);
     
     const onLogin = async () => {
-        try {
-            const payload = {
+        publicAxios.post('/auth/login', {
                 "username": usernameInput,
                 "password": pwInput,
-            };
+            },
+            { headers: {
+                'Content-Type': 'application/json'
+            }}
+        ).then(response => {
+            const { accessToken, refreshToken }: any = response.data;
             
-            const data = new FormData();
-            data.append( "json", JSON.stringify( payload ) );
+            setAuthState({
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                authenticated: true,
+            });
 
-            const response = await fetch("http://localhost:8080/auth/login",
-                {
-                    body: `{"username":"${usernameInput}","password":"${pwInput}"}`,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    method: "POST",
-                }
-            );
-            // const response = await publicAxios.post('/auth/login', {
-            //     "username": usernameInput,
-            //     "password": pwInput,
-            // });
-            
-            console.log(response);
-            const { accessToken } = await response.json();
-            setToken(accessToken);
-            
-            // authContext.setAuthState({
-            //   accessToken,
-            //   authenticated: true,
-            // });
-        } catch (error: any) {
-            Alert.alert('Login Failed', error.response.data.message);
-        }
+            setUsernameInput("");
+            setPwInput("");
+        
+            // await Keychain.setGenericPassword(
+            //     'token',
+            //     JSON.stringify({
+            //         accessToken,
+            //         refreshToken,
+            //     }),
+            // );
+        }).catch(error => {
+            setErrorMsg(error.response.data.exceptionMessage);
+        });
+    }
+
+    const showBanner = (msg: any) => {
+        setIsLoginPage(true);
+        setBannerShow(true);
+        setBannerMsg(msg);
     }
 
     const handleTestUser = async () => {
-        // const response = await fetch("http://localhost:8080/test/user",
-        //     {
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'Authorization': `Bearer ${token}`
-        //         },
-        //         method: "GET",
-        //     }
-        // );
-        const response = await publicAxios.get("http://localhost:8080/test/user");
+        const response = await authAxios.get("http://localhost:8080/test/user");
         setTestText(await response.data.toString())
     };
 
@@ -78,41 +100,61 @@ export default function LoginPage() {
         setIsLoginPage(!isLoginPage);
     }
 
+    if (status === 'loading') {
+        return <Spinner />;
+    }
+
     return isLoginPage ?
-            <View style={styles.container}>
-                <View style={styles.formContainer}>
-                    <Input
-                        label="Felhasználónév"
-                        value={usernameInput}
-                        onChangeText={setUsernameInput}
+            authState?.authenticated ?
+            <>
+                <Button mode="contained" onPress={logout} style={styles.addMarginTop}>Kijelentkezés</Button>
+                <Button mode="outlined" onPress={handleTestUser} style={styles.addMarginTop}>Teszt</Button>
+                <Text>{testText ? `Szerver válasz: ${testText}` : ""}</Text>
+            </>
+            :
+            <>
+                <Banner visible={bannerShow} actions={[{label: "Ok", onPress: () => setBannerShow(false)}]} icon={({size}) => (
+                    <Icon
+                        source="check-outline"
+                        size={size}
                     />
-                    <Input
-                        label="Jelszó"
-                        value={pwInput}
-                        onChangeText={setPwInput}
-                        secure={pwHide}
-                    />
-                    <Button mode="contained" onPress={onLogin} style={styles.addMarginTop}>Belépés</Button>
-                    <Button mode="outlined" onPress={handleChangeRegistration} style={styles.addMarginTop}>Regisztráció</Button>
-                    <Button mode="outlined" onPress={handleTestUser} style={styles.addMarginTop}>Teszt</Button>
-                    <Text>{testText}</Text>
+                )}>
+                    {bannerMsg}
+                </Banner>
+                <View style={styles.container}>
+                    <View style={styles.formContainer}>
+                        <HelperText type="error" visible={errorMsg !== ""}>{errorMsg}</HelperText>
+                        <Input
+                            label="Felhasználónév"
+                            value={usernameInput}
+                            onChangeText={setUsernameInput}
+                        />
+                        <Input
+                            label="Jelszó"
+                            value={pwInput}
+                            onChangeText={setPwInput}
+                            needHide={true}
+                        />
+                        <Button mode="contained" onPress={onLogin} style={styles.addMarginTop}>Belépés</Button>
+                        <Button mode="outlined" onPress={handleChangeRegistration} style={styles.addMarginTop}>Regisztráció</Button>
+                    </View>
                 </View>
-            </View>
-            : <RegistrationPage loginPageSetter={setIsLoginPage} />
+            </>
+            : <RegistrationPage setIsLoginPage={setIsLoginPage} showBanner={showBanner} />
 }
 
-    const styles = StyleSheet.create({
-        container: {
-            flex: 1,
-            padding: 12,
-            alignItems: 'center',
-            justifyContent: 'space-around',
-        },
-        formContainer: {
-            width: '100%',
-            alignItems: 'center',
-        },
-        addMarginTop: {
-            marginTop: 8,
-        }
-    })
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 12,
+        alignItems: 'center',
+        justifyContent: 'space-around',
+    },
+    formContainer: {
+        width: '100%',
+        alignItems: 'center',
+    },
+    addMarginTop: {
+        marginTop: 8,
+    }
+})
