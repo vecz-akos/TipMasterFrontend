@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
-import { Appbar, BottomNavigation, Text } from "react-native-paper";
+import { Appbar, BottomNavigation } from "react-native-paper";
 
 import LoginPage from "./pages/LoginPage";
 import NewRoomPage from "./pages/NewRoomPage";
@@ -23,7 +23,7 @@ export default function App() {
         <>
             <Appbar.Header>
                 <Appbar.Content title="fogadApp" />
-                {/* <Appbar.Action icon="magnify" onPress={() => {}} /> */}
+                <Appbar.Content title={`version: ${process.env.EXPO_PUBLIC_APP_CONFIG}`} />
             </Appbar.Header>
             <View style={{flex: 1}}>
                 <BottomNavigation

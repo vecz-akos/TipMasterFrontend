@@ -20,11 +20,11 @@ const AxiosProvider: FC<Props> = ({children}: any) => {
   const authContext = useContext(AuthContext) as AuthContextType;
 
   const publicAxios = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.EXPO_PUBLIC_API_URL,
   });
 
   const authAxios = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.EXPO_PUBLIC_API_URL,
   }); 
 
   authAxios.interceptors.request.use(
@@ -48,7 +48,7 @@ const AxiosProvider: FC<Props> = ({children}: any) => {
     const options = {
       method: 'POST',
       data,
-      url: 'http://localhost:8080/auth/refresh-token',
+      url: '/auth/refresh-token',
     };
 
     return axios(options)

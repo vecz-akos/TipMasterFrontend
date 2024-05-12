@@ -33,7 +33,7 @@ const Input = ({
           accessibilityLabelledBy={undefined}
           accessibilityLanguage={undefined}
           style={styles.input}
-          right={needHide ? <TextInput.Icon icon={pwHide ? "eye-outline" : "eye-off-outline"} onPress={handlePwShow}/> : <></>}
+          // right={needHide ? <TextInput.Icon icon={pwHide ? "eye-outline" : "eye-off-outline"} onPress={handlePwShow}/> : <></>}
       />
   );
 };

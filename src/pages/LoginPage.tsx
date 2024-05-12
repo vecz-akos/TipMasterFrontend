@@ -92,7 +92,7 @@ export default function LoginPage() {
     }
 
     const handleTestUser = async () => {
-        const response = await authAxios.get("http://localhost:8080/test/user");
+        const response = await authAxios.get("/test/user");
         setTestText(await response.data.toString())
     };
 
