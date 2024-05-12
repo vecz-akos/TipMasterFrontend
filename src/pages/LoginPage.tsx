@@ -72,6 +72,7 @@ export default function LoginPage() {
 
             setUsernameInput("");
             setPwInput("");
+            hideBanner();
         
             // await Keychain.setGenericPassword(
             //     'token',
@@ -85,10 +86,20 @@ export default function LoginPage() {
         });
     }
 
+    const onLogout = async () => {
+        setTestText("");
+        logout();
+    }
+
     const showBanner = (msg: any) => {
         setIsLoginPage(true);
         setBannerShow(true);
         setBannerMsg(msg);
+    }
+
+    const hideBanner = () => {
+        setBannerShow(false);
+        setBannerMsg("");
     }
 
     const handleTestUser = async () => {
@@ -107,13 +118,13 @@ export default function LoginPage() {
     return isLoginPage ?
             authState?.authenticated ?
             <>
-                <Button mode="contained" onPress={logout} style={styles.addMarginTop}>Kijelentkezés</Button>
+                <Button mode="contained" onPress={onLogout} style={styles.addMarginTop}>Kijelentkezés</Button>
                 <Button mode="outlined" onPress={handleTestUser} style={styles.addMarginTop}>Teszt</Button>
                 <Text>{testText ? `Szerver válasz: ${testText}` : ""}</Text>
             </>
             :
             <>
-                <Banner visible={bannerShow} actions={[{label: "Ok", onPress: () => setBannerShow(false)}]} icon={({size}) => (
+                <Banner visible={bannerShow} actions={[{label: "Ok", onPress: hideBanner}]} icon={({size}) => (
                     <Icon
                         source="check-outline"
                         size={size}
